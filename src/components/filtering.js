@@ -1,50 +1,57 @@
-import {createComparison, defaultRules} from "../lib/compare.js";
-
-// @todo: #4.3 — настроить компаратор
-const compare = createComparison(defaultRules);
+import { createComparison, defaultRules } from "../lib/compare.js";
 
 export function initFiltering(elements, indexes) {
     // @todo: #4.1 — заполнить выпадающие списки опциями
-    Object.keys(indexes)                                    // Получаем ключи из объекта
-      .forEach((elementName) => {                        // Перебираем по именам
-        elements[elementName].append(                    // в каждый элемент добавляем опции
-            ...Object.values(indexes[elementName])        // формируем массив имён, значений опций
-                      .map(name => {                        // используйте name как значение и текстовое содержимое
-                            const option = document.createElement('option');
-                            option.value = name;
-                            option.textContent = name;
-                            return option;
-                                                        // @todo: создать и вернуть тег опции
-                      })
-        )
-     })
+    Object.keys(indexes).forEach((elementName) => {
+        if (elements[elementName]) {
+            elements[elementName].append(
+                ...Object.values(indexes[elementName]).map(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    return option;
+                })
+            );
+        }
+    });
+
+    // @todo: #4.3 — настроить компаратор
+    const compare = createComparison(defaultRules);
 
     return (data, state, action) => {
         // @todo: #4.2 — обработать очистку поля
-        if(action && action.name === 'clear'){
+        if (action && action.name === 'clear') {
             const fieldName = action.dataset.field;
-            const parentel= action.parentElement;
-            const inputElement = parentel.querySelector('input');
-            // Сбрасываем значение в найденном поле ввода
-        if (inputElement) {
-            inputElement.value = '';
+            const parentEl = action.parentElement;
+            const inputElement = parentEl.querySelector('input');
+
+            if (inputElement) {
+                inputElement.value = '';
+            }
+            if (fieldName) {
+                state[fieldName] = '';
+            }
         }
 
-        //  Сбрасываем значение в объекте state, чтобы перерисовка использовала пустое значение
-        if (fieldName) {
-            state[fieldName] = '';
-        }
-        }
-// --- ПОДГОТОВКА СОСТОЯНИЯ ДЛЯ КОМПАРАТОРА ---
-        // Нам нужно привести state к виду, который понимают defaultRules
+        // --- ПОДГОТОВКА СОСТОЯНИЯ ДЛЯ КОМПАРАТОРА ---
         const filterState = {};
 
-        // 1. Привязываем searchBySeller из формы к полю seller в данных
+        // 1. Дата (если в HTML поле называется name="date")
+        if (state.date) {
+            filterState.date = state.date;
+        }
+
+        // 2. Покупатель (если в HTML поле называется name="customer")
+        if (state.customer) {
+            filterState.customer = state.customer;
+        }
+
+        // 3. Продавец (в форме 'searchBySeller', в данных 'seller')
         if (state.searchBySeller) {
             filterState.seller = state.searchBySeller;
         }
 
-        // 2. Объединяем totalFrom и totalTo в массив [от, до] для правила arrayAsRange
+        // 4. Сумма (в форме 'totalFrom' и 'totalTo', в данных 'total' как массив [от, до])
         const totalFrom = state.totalFrom ? parseFloat(state.totalFrom) : undefined;
         const totalTo = state.totalTo ? parseFloat(state.totalTo) : undefined;
 
@@ -52,7 +59,7 @@ export function initFiltering(elements, indexes) {
             filterState.total = [totalFrom, totalTo];
         }
 
-        // Если фильтры не заданы, возвращаем исходные данные
+        // Если ни один фильтр не задан, возвращаем исходные данные без изменений
         if (Object.keys(filterState).length === 0) {
             return data;
         }
@@ -68,9 +75,8 @@ export function initFiltering(elements, indexes) {
             return cleanRow;
         });
 
-
         // @todo: #4.5 — отфильтровать данные используя компаратор
+        // ВАЖНО: используем cleanData и filterState, а не data и state!
         return cleanData.filter(row => compare(row, filterState));
-
-    }
+    };
 }
