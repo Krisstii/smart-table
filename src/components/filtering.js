@@ -34,33 +34,49 @@ export function initFiltering(elements, indexes) {
         }
 
         // --- ПОДГОТОВКА СОСТОЯНИЯ ДЛЯ КОМПАРАТОРА ---
-        const filterState = {};
+        // Копируем state, чтобы не мутировать исходный объект и взять все введенные значения
+        const filterState = { ...state };
 
-        // 1. Дата (если в HTML поле называется name="date")
-        if (state.date) {
-            filterState.date = state.date;
+        // 1. Привязываем searchBySeller из формы к полю seller в данных
+        if (filterState.searchBySeller !== undefined) {
+            filterState.seller = filterState.searchBySeller;
+            delete filterState.searchBySeller;
         }
 
-        // 2. Покупатель (если в HTML поле называется name="customer")
-        if (state.customer) {
-            filterState.customer = state.customer;
+        // 2. На случай, если в HTML поля называются с префиксом filter (а в данных без него)
+        if (filterState.filterDate !== undefined) {
+            filterState.date = filterState.filterDate;
+            delete filterState.filterDate;
+        }
+        if (filterState.filterCustomer !== undefined) {
+            filterState.customer = filterState.filterCustomer;
+            delete filterState.filterCustomer;
         }
 
-        // 3. Продавец (в форме 'searchBySeller', в данных 'seller')
-        if (state.searchBySeller) {
-            filterState.seller = state.searchBySeller;
-        }
-
-        // 4. Сумма (в форме 'totalFrom' и 'totalTo', в данных 'total' как массив [от, до])
-        const totalFrom = state.totalFrom ? parseFloat(state.totalFrom) : undefined;
-        const totalTo = state.totalTo ? parseFloat(state.totalTo) : undefined;
+        // 3. Собираем totalFrom и totalTo в массив [от, до] для правила arrayAsRange
+        const totalFrom = filterState.totalFrom ? parseFloat(filterState.totalFrom) : undefined;
+        const totalTo = filterState.totalTo ? parseFloat(filterState.totalTo) : undefined;
 
         if (totalFrom !== undefined || totalTo !== undefined) {
             filterState.total = [totalFrom, totalTo];
         }
+        delete filterState.totalFrom;
+        delete filterState.totalTo;
 
-        // Если ни один фильтр не задан, возвращаем исходные данные без изменений
-        if (Object.keys(filterState).length === 0) {
+        // 4. Удаляем служебные поля управления, которые не должны участвовать в фильтрации данных
+        delete filterState.page;
+        delete filterState.rowsPerPage;
+        delete filterState.sortBy;
+        delete filterState.sortOrder;
+        delete filterState.search; // поиск обрабатывается отдельно в applySearching
+
+        // Проверяем, остались ли какие-либо активные фильтры (не пустые строки и не undefined)
+        const activeFilters = Object.keys(filterState).filter(
+            key => filterState[key] !== '' && filterState[key] !== undefined
+        );
+
+        // Если активных фильтров нет, возвращаем исходные данные без изменений
+        if (activeFilters.length === 0) {
             return data;
         }
 
@@ -76,7 +92,7 @@ export function initFiltering(elements, indexes) {
         });
 
         // @todo: #4.5 — отфильтровать данные используя компаратор
-        // ВАЖНО: используем cleanData и filterState, а не data и state!
+        // ВАЖНО: используем cleanData и filterState
         return cleanData.filter(row => compare(row, filterState));
     };
 }
