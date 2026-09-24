@@ -11,8 +11,8 @@ export function initFiltering(elements, indexes) {
             ...Object.values(indexes[elementName])        // формируем массив имён, значений опций
                       .map(name => {                        // используйте name как значение и текстовое содержимое
                             const option = document.createElement('option');
-                            option.value = 'name';
-                            option.textContent = 'name';
+                            option.value = name;
+                            option.textContent = name;
                             return option;
                                                         // @todo: создать и вернуть тег опции
                       })

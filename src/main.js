@@ -40,14 +40,22 @@ return {                                            // расширьте сущ
  * @param {HTMLButtonElement?} action
  */
 function render(action) {
-    let state = collectState(); // состояние полей из таблицы
-    let result = [...data]; // копируем для последующего изменения
-    // @todo: использование
-    result = applySorting(result, state, action);
-     result = applySearching(result, state, action);
-    result = applyPagination(result, state, action);
+    let state = collectState(); 
+    let result = [...data]; 
+    
+    // 1. Сначала поиск (если он есть)
+    result = applySearching(result, state, action);
+    
+    // 2. Затем фильтрация (как просит задание: перед сортировкой)
     result = applyFiltering(result, state, action);
-    sampleTable.render(result)
+    
+    // 3. Затем сортировка отфильтрованных данных
+    result = applySorting(result, state, action);
+    
+    // 4. И в самом конце пагинация
+    result = applyPagination(result, state, action);
+
+    sampleTable.render(result);
 }
 
 // @todo: подключение
