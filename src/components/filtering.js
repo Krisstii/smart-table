@@ -70,7 +70,7 @@ export function initFiltering(elements, indexes) {
 
 
         // @todo: #4.5 — отфильтровать данные используя компаратор
-        return data.filter(row => compare(row, state));
+        return cleanData.filter(row => compare(row, filterState));
 
     }
 }
