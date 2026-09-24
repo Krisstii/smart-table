@@ -35,6 +35,38 @@ export function initFiltering(elements, indexes) {
             state[fieldName] = '';
         }
         }
+// --- ПОДГОТОВКА СОСТОЯНИЯ ДЛЯ КОМПАРАТОРА ---
+        // Нам нужно привести state к виду, который понимают defaultRules
+        const filterState = {};
+
+        // 1. Привязываем searchBySeller из формы к полю seller в данных
+        if (state.searchBySeller) {
+            filterState.seller = state.searchBySeller;
+        }
+
+        // 2. Объединяем totalFrom и totalTo в массив [от, до] для правила arrayAsRange
+        const totalFrom = state.totalFrom ? parseFloat(state.totalFrom) : undefined;
+        const totalTo = state.totalTo ? parseFloat(state.totalTo) : undefined;
+
+        if (totalFrom !== undefined || totalTo !== undefined) {
+            filterState.total = [totalFrom, totalTo];
+        }
+
+        // Если фильтры не заданы, возвращаем исходные данные
+        if (Object.keys(filterState).length === 0) {
+            return data;
+        }
+
+        // --- ОЧИСТКА ДАННЫХ ---
+        // Превращаем строки с пробелами ("4 657.56") в числа (4657.56), 
+        // чтобы математическое сравнение в arrayAsRange работало верно
+        const cleanData = data.map(row => {
+            const cleanRow = { ...row };
+            if (typeof cleanRow.total === 'string') {
+                cleanRow.total = parseFloat(cleanRow.total.replace(/\s/g, ''));
+            }
+            return cleanRow;
+        });
 
 
         // @todo: #4.5 — отфильтровать данные используя компаратор
