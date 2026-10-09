@@ -43,12 +43,10 @@ async function render(action) {
   // let result = [...data];
 
   let query = {};
-
+  query = applySearching(query, state, action);
   query = applyFiltering(query, state, action);
   query = applySorting(query, state, action);
-
   query = applyPagination(query, state, action);
-  query = applySearching(query, state, action);
 
   const { total, items } = await api.getRecords(query);
   updatePagination(total, query);
@@ -103,4 +101,4 @@ async function init() {
   });
 }
 
-window.appReady = init().finally(() => render());
+init().then(render);
