@@ -103,5 +103,4 @@ async function init() {
   });
 }
 
-init().then(render);
-
+window.appReady = init().finally(() => render());
